@@ -1649,6 +1649,9 @@ var Game = {
             }
             this.initWeigtedSet();
         }
+        else { //Using CageMaker set up empty array
+          this.operation_set = [];
+        }
         this.c = [];
         this.size = size;
     },
