@@ -1444,6 +1444,7 @@ var CagePallete = {
     c: [], //cages
     size: 0,
     init: function (saved_cages) {
+        if(this.c.length == saved_cages.length) return;
         for (var j = 0; j < saved_cages.length; j++) {
             //uncomment to Add index
             //saved_cages[j].i = j;
@@ -1733,6 +1734,7 @@ var Game = {
     //Generate a compressed key using a size
     generateKey: function(size)
     {
+      Solution.init();
       Solution.generate(size, null);
       var key = "" + size + Solution.getKey();
       return MeZip.encode(key);
