@@ -73,12 +73,26 @@ var Stopwatch = function(elem, options) {
     return d;
   }
   
+  function getSeconds() {
+    var str = this.getTimeStr();
+    var p = str.split(':'),
+        s = 0, m = 1;
+
+    while (p.length > 0) {
+        s += m * parseInt(p.pop(), 10);
+        m *= 60;
+    }
+
+    return s;
+  }
+
   // public API
   this.start  = start;
   this.stop   = stop;
   this.reset  = reset;
   this.getTimeStr = getTimeStr;
-  
+  this.getSeconds = getSeconds;
+
 };
 
 /*
