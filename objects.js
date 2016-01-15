@@ -657,7 +657,15 @@ var Cartouche_Objects = (function () {
             userArray.push({x: x, y: y, val: usr});
             //Convert operand index into symbolic value
             var symbol = Game.getNumberSetExpressionByIndex(op);
-            symbolsArray.push(symbol);
+            if(symbol)
+            {
+              symbolsArray.push(symbol);
+            }
+            else
+            {
+              console.log("Cage.prototype.setOperationValues Error: this.o = " + JSON.stringify(this.o));
+              console.log("solution = " + JSON.stringify(solution));
+            }
         }
       /*
         if (reCalc) {
@@ -712,6 +720,9 @@ var Cartouche_Objects = (function () {
 
         var simplification = CQ(this.rt.eq).simplify().toString();
         simplification = Utl.replaceAll(simplification, "**", "^");
+
+        console.log("Basic Equation: " + this.rt.eq);
+        console.log("Simplification: " + simplification);
 
         if (type == 0) {
             var w = CONST.G_WIDTH * Utl.widthFactor(simplification);
@@ -1019,7 +1030,16 @@ var Cartouche_Objects = (function () {
                 else
                 {
                     //TODO update user solution symbol also
-                    this.rt.solutions[index][i].symbol = Game.getNumberSetExpressionByIndex(n);
+                    var symbol = Game.getNumberSetExpressionByIndex(n);
+                    if(symbol)
+                    {
+                      this.rt.solutions[index][i].symbol = symbol;
+                    }
+                    else
+                    {
+                      console.log("Cage.prototype.updateUserSolution Error: this.o = " + JSON.stringify(this.o));
+                      console.log("solution = " + JSON.stringify(Game.solution));
+                    }
                 }
                 return;
             }
@@ -1040,7 +1060,16 @@ var Cartouche_Objects = (function () {
                     }
                     else
                     {
-                        child.rt.solutions[index][i].symbol = Game.getNumberSetExpressionByIndex(n);
+                        var symbol = Game.getNumberSetExpressionByIndex(n);
+                        if(symbol)
+                        {
+                          child.rt.solutions[index][i].symbol = symbol;
+                        }
+                        else
+                        {
+                          console.log("Cage.prototype.updateUserSolution Error: child.o = " + JSON.stringify(child.o));
+                          console.log("solution = " + JSON.stringify(Game.solution));
+                        }
                     }
                     return;
                 }
@@ -1082,7 +1111,7 @@ var Cartouche_Objects = (function () {
         //Production code should never encounter empty solution values
         var simplification = CQ(this.rt.eq).simplify().toString();
         simplification = Utl.replaceAll(simplification, "**", "^");
-        console.log("START DEBUG " + simplification);
+        console.log("Equation: " + this.rt.eq + " simplification: " + simplification);
         //TODO test count remove
         var total = 0, count =0;
         for(var i=0; i < this.rt.solutions[1].length; i++)
@@ -1101,7 +1130,7 @@ var Cartouche_Objects = (function () {
                 if(item.val)count++;
             }
         }
-        console.log(simplification + " total: " + total +" count: " + count);
+        //console.log(simplification + " total: " + total +" count: " + count);
         if(total != count)return false;
         //TODO end of guard code
 
@@ -1141,7 +1170,7 @@ var Cartouche_Objects = (function () {
             }
             all_solution_array_objects.push({operation:child.op, array:temp, type:2}); //type 2 child
         }
-        console.log(simplification + " all_solution_array_objects " + JSON.stringify(all_solution_array_objects));
+        //console.log(simplification + " all_solution_array_objects " + JSON.stringify(all_solution_array_objects));
 
         var executionTable;
         //If the parent operation is commutative (order is not important)
@@ -1154,7 +1183,7 @@ var Cartouche_Objects = (function () {
             executionTable = PermutationTable.get(all_solution_array_objects.length);
         }
 
-        console.log(simplification + " executionTable " + JSON.stringify(executionTable));
+        //console.log(simplification + " executionTable " + JSON.stringify(executionTable));
 
         //Execute all permutations of the list of solution array objects
         for(var i=0; i < executionTable.length; i++)
@@ -1281,8 +1310,16 @@ var Cartouche_Objects = (function () {
 
     Cage.prototype.toSymbolic = function (array) {
         for (var i = 0; i < array.length; i++) {
-            var symbol = Game.getNumberSetExpressionByIndex(array[i].val) || "";
-            array[i].symbol = symbol;
+            var symbol = Game.getNumberSetExpressionByIndex(array[i].val); // || "";
+            if(symbol)
+            {
+              array[i].symbol = symbol;
+            }
+            else
+            {
+              array[i].symbol = "";
+              console.log("Cage.prototype.toSymbolic Error: from array " + JSON.stringify(array));
+            }
         }
         return array;
     }
@@ -1622,6 +1659,7 @@ var Game = {
 
     init: function (ctx, size, obj)//, isTemplate)
     {
+        this.current_notes = null;
         this.operation_set = null;
         this.current_selection = null;
         this.ctx = ctx;
@@ -2178,10 +2216,25 @@ var Game = {
         return null;
     },
     getNumberSetExpressionByIndex: function (index) {
+        var nSet = null;
         //solution sets start at 1
         //number_set set array starts at 0
-        index = index - 1;
-        return this.number_set.set[index];
+        my_index = index - 1;
+        if(my_index >= 0)
+        {
+          nSet = this.number_set.set[my_index];
+          var pattern = /[*]/;
+          if(nSet.match(pattern))
+          {
+            //Surround with parenthesis for complex operands
+            nSet = "(" + nSet + ")";
+          }
+        }
+        else
+        {
+          console.log("function getNumberSetExpressionByIndex Error: index value " + index + " is less than 1");
+        }
+        return  nSet;
     },
     ////////////////////////////////  State Management  ////////////////////////
     //Remove un-needed properties
