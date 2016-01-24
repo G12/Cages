@@ -22,9 +22,14 @@ var Stopwatch = function(elem, options) {
     return document.createElement("span");
   }
   
-  function start() {
+  function start(seconds) {
+    seconds = seconds || null;
     if (!interval) {
-      offset   = Date.now();
+      if (seconds !== null) {
+        offset  = Date.now() - seconds;
+      }else {
+        offset   = Date.now();
+      }
       interval = setInterval(update, options.delay);
     }
   }
