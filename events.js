@@ -284,11 +284,19 @@ var GameEvents = {
         }
     },
 
-    startTimer: function()
+    startTimer: function(seconds)
     {
+      seconds = seconds || null;
+
       currentGame.time.reset();
-      //Start the timer now
-      currentGame.time.start();
+
+      if (seconds !== null) {
+        currentGame.time.start(seconds*1000);
+      }else {
+        //Start the timer now
+        currentGame.time.start();
+      }
+
       g_gameOn = true;
 
     },
