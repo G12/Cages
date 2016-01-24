@@ -62,6 +62,7 @@ var CONST = {
 
     G_SAVE_GAME:1,
     G_SAVE_TEMPLATE:2,
+    G_SAVE_NEW_GAME:3,
 
     //Color constants
     G_SUBTRACT_FILL:"#f8e79f",
@@ -470,6 +471,19 @@ var Math_ops =
         }
         return mask;
     },
+    bitMaskToString: function(bit_mask)
+    {
+      var str = "";
+      for(var i=0; i < this.matrix.length; i++)
+      {
+        var test = this.matrix[i].mask;
+        if(bit_mask & test)
+        {
+          str += this.matrix[i].symbol + " ";
+        }
+      }
+      return str;
+    },
     toOperationSet: function (bit_mask)
     {
         var array = [];
@@ -720,6 +734,9 @@ var Cartouche_Objects = (function () {
 
         var simplification = CQ(this.rt.eq).simplify().toString();
         simplification = Utl.replaceAll(simplification, "**", "^");
+
+        //TODO investigate cause of -(0) bug
+        simplification = simplification == "-(0)" ? "0" : simplification;
 
         console.log("Basic Equation: " + this.rt.eq);
         console.log("Simplification: " + simplification);
@@ -1636,6 +1653,10 @@ function overlapsExistingCage(obj, cageOpsArray) {
 
 var Game = {
 
+    //Extra information Added Jan 17 2016
+    name:null,
+    id:null,
+
     //New math operation and solution flags bitmap
     operation_flags:CONST.OP_STATIC,       //Uses the supplied operator (Cage.op) values
     solution_flags:CONST.SOL_STATIC,     //Uses the supplied solution
@@ -1664,6 +1685,10 @@ var Game = {
         this.current_selection = null;
         this.ctx = ctx;
         if(obj) {
+
+            //Extra information Added Jan 17 2016
+            if(obj.name){this.name = obj.name};
+            if(obj.id){this.id = obj.id}
 
             //Get operation flags from supplied json - NOTE allow case where flag is zero
             if(obj.operation_flags || obj.operation_flags == CONST.OP_STATIC)
@@ -2063,6 +2088,10 @@ var Game = {
         obj.key = MeZip.encode(obj.key);
         obj.operation_set = $.extend(true, [],this.operation_set);
         obj.number_set = this.number_set.id;
+
+        //Extra information Added Jan 17 2016
+        if(this.name){obj.name = this.name};
+        if(this.id){obj.id = this.id}
 
         if (CONST.G_SAVE_TEMPLATE != scope) {
             obj.solution = $.extend(true, [], this.solution);
@@ -2599,6 +2628,9 @@ var Display_Objects = (function () {
     {
         var str = CQ(str).simplify().toString();
         str = Utl.replaceAll(str, "**", "^");
+
+        //TODO investigate -(0) bug
+        str = str == "-(0)" ? "0" : str;
 
         var SCALE_FACTOR = 1.5; //The larger this factor the smaller the letter
         var box = getCanvasBox(str);
