@@ -384,7 +384,7 @@ var GameEvents = {
     {
         if(GameEvents.saveCallback)
         {
-            var obj = Game.compress(saveMode);
+          var obj = Game.compress(saveMode);
           if(GameEvents.g_save_as_object)
           {
             GameEvents.saveCallback(obj, saveMode, game_complete);
