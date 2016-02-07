@@ -390,6 +390,7 @@ var GameEvents = {
 
     saveGame: function(saveMode, game_complete)
     {
+        //alert("GameEvents.saveCallback" + JSON.stringify(GameEvents.saveCallback));
         if(GameEvents.saveCallback)
         {
           var obj = Game.compress(saveMode);
@@ -398,9 +399,14 @@ var GameEvents = {
             GameEvents.saveCallback(obj, saveMode, game_complete);
           }
           else {
+
             var strCages = JSON.stringify(obj);
             GameEvents.saveCallback(strCages, saveMode, game_complete);
           }
+        }
+        else
+        {
+          alert("GameEvents.saveCallback is not set");
         }
     },
 
@@ -505,6 +511,65 @@ var GameEvents = {
                 $(Game.current_selection).addClass("selected");
                 $(Game.current_selection).removeClass("deselected");
             }
+        });
+
+
+        //Floating number padd research
+        var table_timeoutId = 0;
+
+        $("#overlay table").mousedown(function(e) {
+          table_timeoutId = setTimeout(function(){
+            if (Game.current_selection) {
+              $(Game.current_selection).addClass("deselected");
+              $(Game.current_selection).removeClass("selected");
+            }
+            if ("CANVAS" == e.target.tagName) {
+              Game.current_selection = e.target;
+              $(Game.current_selection).addClass("selected");
+              $(Game.current_selection).removeClass("deselected");
+            }
+            var n = prompt("Enter Number Code");
+            if (n != null)
+            {
+              if(n < 1 || n > Game.number_set.set.length)
+              {
+                return;
+              }
+              //If a game cell is selected
+              if (Game.current_selection) {
+                var x = Game.current_selection.dataset.x;
+                var y = Game.current_selection.dataset.y;
+                var cage = Game.getCage(x, y);
+                //If n equals current value then erase
+                if (Game.solution[y][x][1] == n) {
+                  //Update the user solution array and the global solution
+                  //and Update the History stack
+                  cage.updateUserSolution(x, y, null);
+                  GameEvents.drawCanvasCell(Game.current_selection, x, y)
+
+                  //Check for winner - Fast
+                  var count = Game.scanSuccess().count;
+                  $("#hint").html("Hint: " + count + " correct");
+
+                  GameEvents.scanForDuplicates();
+                  //Alaways save game after this
+                  if(GameEvents.g_auto_save)
+                  {
+                    GameEvents.saveGame(CONST.G_SAVE_GAME, false);
+                  }
+                  return;
+                }
+                GameEvents.updateGame(cage, x, y, n, false);
+                //Alaways save game after this
+                if(GameEvents.g_auto_save)
+                {
+                  GameEvents.saveGame(CONST.G_SAVE_GAME, false);
+                }
+              }
+            }
+          }, 1000);
+        }).bind('mouseup mouseleave', function(e) {
+          clearTimeout(table_timeoutId);
         });
 
 

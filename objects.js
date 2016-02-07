@@ -93,6 +93,7 @@ var CONST = {
     OP_SUPRESS_DUPLICATES:2,    //Try to make sure cages do not contain duplicate operators
     OP_NO_NEGATIVES:4,          //Make sure no negative solutions are generated
     OP_NO_FRACTIONS:8,          //Make sure no fractional solutions are generated
+    OP_SORT_DESCENDING:16,      //Sort non commutative operations in descending order
 
     //Solution Generation
     SOL_STATIC:0,               //Use supplied solution
@@ -108,236 +109,242 @@ var CONST = {
 
 var Utl = {
 
-    addFlag:function(bitMask, flag)
-    {
-        return bitMask | flag;
-    },
+  sleep:function(miliseconds)
+  {
+    var currentTime = new Date().getTime();
+    while (currentTime + miliseconds >= new Date().getTime()) {}
+  },
 
-    removeFlag:function(bitMask, flag)
-    {
-        return bitMask & ~flag;
-    },
+  addFlag:function(bitMask, flag)
+  {
+      return bitMask | flag;
+  },
 
-    checkFlag:function(bitMask, flag)
-    {
-        return bitMask & flag;
-    },
+  removeFlag:function(bitMask, flag)
+  {
+      return bitMask & ~flag;
+  },
 
-    solution_shuffle:function (array)
-    {
-        var key = "";
-        var currentIndex = array.length, temporaryValue, randomIndex;
+  checkFlag:function(bitMask, flag)
+  {
+      return bitMask & flag;
+  },
 
-        // While there remain elements to shuffle...
-        while (0 !== currentIndex) {
+  solution_shuffle:function (array)
+  {
+      var key = "";
+      var currentIndex = array.length, temporaryValue, randomIndex;
 
-            // Pick a remaining element...
-            randomIndex = Math.floor(Math.random() * currentIndex);
-            key += randomIndex;
-            currentIndex -= 1;
+      // While there remain elements to shuffle...
+      while (0 !== currentIndex) {
 
-            // And swap it with the current element.
-            temporaryValue = array[currentIndex];
-            array[currentIndex] = array[randomIndex];
-            array[randomIndex] = temporaryValue;
-        }
+          // Pick a remaining element...
+          randomIndex = Math.floor(Math.random() * currentIndex);
+          key += randomIndex;
+          currentIndex -= 1;
 
-        return {array: array, key: key};
-    },
+          // And swap it with the current element.
+          temporaryValue = array[currentIndex];
+          array[currentIndex] = array[randomIndex];
+          array[randomIndex] = temporaryValue;
+      }
 
-    /*
-    solution_objectsAreSame:function (x, y) {
-        var objectsAreSame = true;
-        for (var propertyName in x) {
-            if (x[propertyName] !== y[propertyName]) {
-                objectsAreSame = false;
-                break;
-            }
-        }
-        return objectsAreSame;
-    },
-    */
+      return {array: array, key: key};
+  },
 
-    escapeRegExp:function (string) {
-        return string.replace(/([.*+?^=!:${}()|\[\]\/\\])/g, "\\$1");
-    },
+  /*
+  solution_objectsAreSame:function (x, y) {
+      var objectsAreSame = true;
+      for (var propertyName in x) {
+          if (x[propertyName] !== y[propertyName]) {
+              objectsAreSame = false;
+              break;
+          }
+      }
+      return objectsAreSame;
+  },
+  */
 
-    replaceAll:function (string, find, replace) {
-        return string.replace(new RegExp(Utl.escapeRegExp(find), 'g'), replace);
-    },
+  escapeRegExp:function (string) {
+      return string.replace(/([.*+?^=!:${}()|\[\]\/\\])/g, "\\$1");
+  },
 
-    //Round to 3 decimal places
-    roundOff:function (val) {
-        return Math.round(val * 1000) / 1000;
-    },
+  replaceAll:function (string, find, replace) {
+      return string.replace(new RegExp(Utl.escapeRegExp(find), 'g'), replace);
+  },
 
-    drawStar:function (ctx, cx, cy, spikes, outerRadius, innerRadius) {
-        var rot = Math.PI / 2 * 3;
-        var x = cx;
-        var y = cy;
-        var step = Math.PI / spikes;
+  //Round to 3 decimal places
+  roundOff:function (val) {
+      return Math.round(val * 1000) / 1000;
+  },
 
-        ctx.strokeSyle = "#000";
-        ctx.fillStyle = "#FFE700";
-        ctx.beginPath();
-        ctx.moveTo(cx, cy - outerRadius)
-        for (i = 0; i < spikes; i++) {
-            x = cx + Math.cos(rot) * outerRadius;
-            y = cy + Math.sin(rot) * outerRadius;
-            ctx.lineTo(x, y)
-            rot += step
+  drawStar:function (ctx, cx, cy, spikes, outerRadius, innerRadius) {
+      var rot = Math.PI / 2 * 3;
+      var x = cx;
+      var y = cy;
+      var step = Math.PI / spikes;
 
-            x = cx + Math.cos(rot) * innerRadius;
-            y = cy + Math.sin(rot) * innerRadius;
-            ctx.lineTo(x, y)
-            rot += step
-        }
-        ctx.lineTo(cx, cy - outerRadius)
-        ctx.stroke();
-        ctx.closePath();
-        ctx.fill();
+      ctx.strokeSyle = "#000";
+      ctx.fillStyle = "#FFE700";
+      ctx.beginPath();
+      ctx.moveTo(cx, cy - outerRadius)
+      for (i = 0; i < spikes; i++) {
+          x = cx + Math.cos(rot) * outerRadius;
+          y = cy + Math.sin(rot) * outerRadius;
+          ctx.lineTo(x, y)
+          rot += step
 
-    },
+          x = cx + Math.cos(rot) * innerRadius;
+          y = cy + Math.sin(rot) * innerRadius;
+          ctx.lineTo(x, y)
+          rot += step
+      }
+      ctx.lineTo(cx, cy - outerRadius)
+      ctx.stroke();
+      ctx.closePath();
+      ctx.fill();
 
-    G_KAPPA_SQUARE: .8,
-    G_KAPPA_ROUND: .5522848,
+  },
 
-    drawEllipse:function (shape, ctx, x, y, w, h) {
-        var kappa = shape,
-            ox = (w / 2) * kappa, // control point offset horizontal
-            oy = (h / 2) * kappa, // control point offset vertical
-            xe = x + w,           // x-end
-            ye = y + h,           // y-end
-            xm = x + w / 2,       // x-middle
-            ym = y + h / 2;       // y-middle
+  G_KAPPA_SQUARE: .8,
+  G_KAPPA_ROUND: .5522848,
 
-        ctx.beginPath();
-        ctx.moveTo(x, ym);
-        ctx.bezierCurveTo(x, ym - oy, xm - ox, y, xm, y);
-        ctx.bezierCurveTo(xm + ox, y, xe, ym - oy, xe, ym);
-        ctx.bezierCurveTo(xe, ym + oy, xm + ox, ye, xm, ye);
-        ctx.bezierCurveTo(xm - ox, ye, x, ym + oy, x, ym);
+  drawEllipse:function (shape, ctx, x, y, w, h) {
+      var kappa = shape,
+          ox = (w / 2) * kappa, // control point offset horizontal
+          oy = (h / 2) * kappa, // control point offset vertical
+          xe = x + w,           // x-end
+          ye = y + h,           // y-end
+          xm = x + w / 2,       // x-middle
+          ym = y + h / 2;       // y-middle
 
-        ctx.fill();
-        ctx.stroke();
-    },
+      ctx.beginPath();
+      ctx.moveTo(x, ym);
+      ctx.bezierCurveTo(x, ym - oy, xm - ox, y, xm, y);
+      ctx.bezierCurveTo(xm + ox, y, xe, ym - oy, xe, ym);
+      ctx.bezierCurveTo(xe, ym + oy, xm + ox, ye, xm, ye);
+      ctx.bezierCurveTo(xm - ox, ye, x, ym + oy, x, ym);
 
-    //Used to proportion the placement of result Ellipse
-    widthFactor:function (value) {
-        var test = value.toString();
-        var len = test.length;
-        switch (len) {
-            case 1:
-                return .64;
-            case 2:
-                return .84;
-            case 3:
-                return 1;
-            case 4:
-                return 1.2;
-            case 5:
-                return 1.4;
-            case 6:
-                return 1.6;
-            case 7:
-                return 1.8;
-            case 8:
-                return 2;
-            case 9:
-                return 2.2;
-            case 10:
-                return 2.4;
+      ctx.fill();
+      ctx.stroke();
+  },
 
-        }
-        if (len > 10) {
-            return 1.8;
-        }
-        return 1;
-    },
+  //Used to proportion the placement of result Ellipse
+  widthFactor:function (value) {
+      var test = value.toString();
+      var len = test.length;
+      switch (len) {
+          case 1:
+              return .64;
+          case 2:
+              return .84;
+          case 3:
+              return 1;
+          case 4:
+              return 1.2;
+          case 5:
+              return 1.4;
+          case 6:
+              return 1.6;
+          case 7:
+              return 1.8;
+          case 8:
+              return 2;
+          case 9:
+              return 2.2;
+          case 10:
+              return 2.4;
 
-    translateOperands:function (source, dest, operands) {
-        var array = [];
-        var dx = dest[0] - source[0];
-        var dy = dest[1] - source[1];
-        for (var i = 0; i < operands.length; i++) {
-            array.push([operands[i][0] + dx, operands[i][1] + dy]);
-        }
-        return array;
-    },
+      }
+      if (len > 10) {
+          return 1.8;
+      }
+      return 1;
+  },
 
-    // Converts from degrees to radians.
-    radians:function (degrees) {
-        return degrees * Math.PI / 180;
-    },
+  translateOperands:function (source, dest, operands) {
+      var array = [];
+      var dx = dest[0] - source[0];
+      var dy = dest[1] - source[1];
+      for (var i = 0; i < operands.length; i++) {
+          array.push([operands[i][0] + dx, operands[i][1] + dy]);
+      }
+      return array;
+  },
 
-    // Converts from radians to degrees.
-    degrees:function (radians) {
-        return radians * 180 / Math.PI;
-    },
+  // Converts from degrees to radians.
+  radians:function (degrees) {
+      return degrees * Math.PI / 180;
+  },
 
-    //Calcs destination point using origin(x y) and vector
-    toRect:function (x, y, dist, angle) {
-        x2 = x + Math.cos(angle) * dist;
-        y2 = y + Math.sin(angle) * dist;
-        return {x: x2, y: y2};
-    },
+  // Converts from radians to degrees.
+  degrees:function (radians) {
+      return radians * 180 / Math.PI;
+  },
 
-    // Returns a random integer between min (included) and max (excluded)
-    // Using Math.round() will give you a non-uniform distribution!
-    getRandomInt:function (min, max) {
-        return Math.floor(Math.random() * (max - min)) + min;
-    },
+  //Calcs destination point using origin(x y) and vector
+  toRect:function (x, y, dist, angle) {
+      x2 = x + Math.cos(angle) * dist;
+      y2 = y + Math.sin(angle) * dist;
+      return {x: x2, y: y2};
+  },
 
-    numericVal:function (str) {
-        switch (str) {
-            case "N":
-                return CONST.N;
-            case "E":
-                return CONST.E;
-            case "S":
-                return CONST.S;
-            case "W":
-                return CONST.W;
-        }
-    },
+  // Returns a random integer between min (included) and max (excluded)
+  // Using Math.round() will give you a non-uniform distribution!
+  getRandomInt:function (min, max) {
+      return Math.floor(Math.random() * (max - min)) + min;
+  },
 
-    strArrayToNumeric:function (str) {
-        var ret = [];
-        for (var i = 0; i < str.length; i++) {
-            ret.push(Utl.numericVal(str[i]));
-        }
-        return ret;
-    },
+  numericVal:function (str) {
+      switch (str) {
+          case "N":
+              return CONST.N;
+          case "E":
+              return CONST.E;
+          case "S":
+              return CONST.S;
+          case "W":
+              return CONST.W;
+      }
+  },
 
-    exteriorAngle:function (direction, next_direction) {
-        reverse_direction = direction + Math.PI;
-        reverse_direction = reverse_direction >= 2 * Math.PI ? reverse_direction - 2 * Math.PI : reverse_direction;
-        var angle = next_direction - reverse_direction;
-        return angle < 0 ? 2 * Math.PI + angle : angle;
-    },
+  strArrayToNumeric:function (str) {
+      var ret = [];
+      for (var i = 0; i < str.length; i++) {
+          ret.push(Utl.numericVal(str[i]));
+      }
+      return ret;
+  },
 
-    gcd:function (a, b) {
-        if (!b) {
-            return a;
-        }
-        return Utl.gcd(b, a % b);
-    },
+  exteriorAngle:function (direction, next_direction) {
+      reverse_direction = direction + Math.PI;
+      reverse_direction = reverse_direction >= 2 * Math.PI ? reverse_direction - 2 * Math.PI : reverse_direction;
+      var angle = next_direction - reverse_direction;
+      return angle < 0 ? 2 * Math.PI + angle : angle;
+  },
 
-    makeSymbolicExpression:function (array, operator) {
-        var str = "(" + array[0];
-        for (var i = 1; i < array.length; i++) {
-            str += operator + array[i];
-        }
-        return str + ")";
-    },
+  gcd:function (a, b) {
+      if (!b) {
+          return a;
+      }
+      return Utl.gcd(b, a % b);
+  },
 
-    arrangeSymbolicArray:function (target, order) {
-        var ret = [];
-        for (var i = 0; i < order.length; i++) {
-            ret.push(target[order[i]]);
-        }
-        return ret;
-    }
+  makeSymbolicExpression:function (array, operator) {
+      var str = "(" + array[0];
+      for (var i = 1; i < array.length; i++) {
+          str += operator + array[i];
+      }
+      return str + ")";
+  },
+
+  arrangeSymbolicArray:function (target, order) {
+      var ret = [];
+      for (var i = 0; i < order.length; i++) {
+          ret.push(target[order[i]]);
+      }
+      return ret;
+  }
 
 }
 
@@ -483,6 +490,15 @@ var Math_ops =
         }
       }
       return str;
+    },
+    testBitmask: function(operation_name, bit_mask)
+    {
+      var i = this.getIndexForName(operation_name);
+      var test = this.matrix[i].mask;
+      if(bit_mask & test) {
+        return true;
+      }
+      return false;
     },
     toOperationSet: function (bit_mask)
     {
@@ -657,8 +673,80 @@ var Cartouche_Objects = (function () {
         //Add Child results to array
         for (var i = 0; i < this.c.length; i++) {
             //Use unshift so equations are formed left to right
-            symbolsArray.unshift(this.c[i].rt.eq);
+            var return_object = this.c[i].rt;
+            var child_equation = return_object.eq;
+            symbolsArray.unshift(child_equation);
         }
+
+        //Save these values for convenience
+        var subtract = Math_ops.getIndexForName("subtract");
+        var divide = Math_ops.getIndexForName("divide");
+
+        //TODO This can only be done for simple numeric expressions
+        if (Game.number_set.type == 0 && Utl.checkFlag(Game.operation_flags, CONST.OP_SORT_DESCENDING))
+        {
+          //TODO for no negative results re-order Highest val to lowest where recommended_operation is subtraction
+          //Only garanteed for two member arrays - see below for checking for negative results
+          if (subtract == recommended_operation || divide == recommended_operation) {
+            // sort the o array solution values in descending order
+            this.o.sort(function (a, b) {
+              //return b - a for descending
+              var x = a[0];
+              var y = a[1];
+              //Get operand from solution
+              var point = solution[y][x];
+              var opA = point[0];
+
+              x = b[0];
+              y = b[1];
+              //Get operand from solution
+              point = solution[y][x];
+              var opB = point[0];
+
+              //Get symbol for op
+              var symbolA = Game.getNumberSetExpressionByIndex(opA);
+              var symbolB = Game.getNumberSetExpressionByIndex(opB);
+
+              var intA = parseInt(symbolA);
+              var intB = parseInt(symbolB);
+
+              return intB - intA;
+
+            });
+          }
+        }
+        if(reCalc) //Must be allowed to change operator types for this operation
+        {
+          if (Utl.checkFlag(Game.operation_flags, CONST.OP_NO_NEGATIVES))
+          {
+            //Fix negative results (only possible with arrays larger than 2)
+            if (subtract == recommended_operation && this.o.length > 2) {
+              //get the subtraction result
+              var subtraction_result;
+              for (var i = 0; i < this.o.length; i++) {
+                var x = this.o[i][0];
+                var y = this.o[i][1];
+                //Get operand from solution
+                var point = solution[y][x];
+                var op = point[0];
+                var symbol = Game.getNumberSetExpressionByIndex(op);
+                var n = parseInt(symbol);
+                if (i == 0) {
+                  subtraction_result = n;
+                }
+                else {
+                  subtraction_result = subtraction_result - n;
+                }
+              }
+              if (subtraction_result < 0) {
+                //If subtraction result is less than 0 substitute another operation type
+                //Get a random operation from the set excluding subtraction
+                recommended_operation = Math_ops.getRecommendedOp([subtract], Game.operation_set);
+              }
+            }
+          }
+        }
+
         //Add symbolsArray from cage.
         for (var i = 0; i < this.o.length; i++) {
             var x = this.o[i][0];
@@ -677,33 +765,11 @@ var Cartouche_Objects = (function () {
             }
             else
             {
-              console.log("Cage.prototype.setOperationValues Error: this.o = " + JSON.stringify(this.o));
+              console.log("Cage.prototype.setOperationValues No symbol Error: this.o = " + JSON.stringify(this.o));
               console.log("solution = " + JSON.stringify(solution));
             }
         }
-      /*
-        if (reCalc) {
-            //TODO validate all changes (commented out lines)
-            //Determine the appropriate operation to use
-            //for operand array larger than 2 we must use commutative operations
-            //if (symbolsArray.length > 2) {
 
-                var operation = Math_ops.matrix[recommended_operation];
-
-                    //if (!operation.commutative) {
-                    //Choose a random commutative operation
-                    //var com_ops = Math_ops.selectCommutativeOps(operation_set);
-                    //var n = Utl.getRandomInt(0, com_ops.length);
-
-                    var n = Utl.getRandomInt(0, operation_set.length);
-
-                    //recommended_operation = com_ops[n];
-
-                    recommended_operation = operation_set[n];
-                //}
-            //}
-        }
-        */
         var operation = Math_ops.matrix[recommended_operation];
         //create the array that holds the various solutions
         var expArray = [];
@@ -714,7 +780,24 @@ var Cartouche_Objects = (function () {
 
         this.rt.solutions = expArray;
         this.rt.eq = Operations.execute(operation.name, symbolsArray);
-        this.op = Math_ops.getIndexForName(operation.name);
+
+        if(reCalc) {
+          //For simple numeric operators if the equation result is negative
+          //change the recommended_operation from subtract
+          if (Game.number_set.type == 0) {
+            if (subtract == recommended_operation && Utl.checkFlag(Game.operation_flags, CONST.OP_NO_NEGATIVES)) {
+              //Test if equation result is less than 0
+              var simplification = CQ(this.rt.eq).simplify().toString();
+              if ("-" == simplification.charAt(0) && "-(0)" != simplification) {
+                //if result is less than 0 change recommended_operation to a value other than subtract
+                recommended_operation = Math_ops.getRecommendedOp([subtract], Game.operation_set);
+                operation = Math_ops.matrix[recommended_operation];
+                this.rt.eq = Operations.execute(operation.name, symbolsArray);
+              }
+            }
+          }
+          this.op = Math_ops.getIndexForName(operation.name);
+        }
         return recommended_operation;
     }
 
@@ -738,8 +821,8 @@ var Cartouche_Objects = (function () {
         //TODO investigate cause of -(0) bug
         simplification = simplification == "-(0)" ? "0" : simplification;
 
-        console.log("Basic Equation: " + this.rt.eq);
-        console.log("Simplification: " + simplification);
+        //console.log("Basic Equation: " + this.rt.eq);
+        //console.log("Simplification: " + simplification);
 
         if (type == 0) {
             var w = CONST.G_WIDTH * Utl.widthFactor(simplification);
@@ -1128,7 +1211,7 @@ var Cartouche_Objects = (function () {
         //Production code should never encounter empty solution values
         var simplification = CQ(this.rt.eq).simplify().toString();
         simplification = Utl.replaceAll(simplification, "**", "^");
-        console.log("Equation: " + this.rt.eq + " simplification: " + simplification);
+        //console.log("Equation: " + this.rt.eq + " simplification: " + simplification);
         //TODO test count remove
         var total = 0, count =0;
         for(var i=0; i < this.rt.solutions[1].length; i++)
@@ -1252,14 +1335,14 @@ var Cartouche_Objects = (function () {
 
                 //console.log("Ordered Solutions:" + JSON.stringify(solutions));
                 var equation = Operations.execute(Math_ops.matrix[this.op].name, orderedArray);
-                console.log("Does " + this.rt.eq + " = " + equation);
+                //console.log("Does " + this.rt.eq + " = " + equation);
 
                 //Test equations for equality
                 var eq1 = CQ(this.rt.eq);
                 var eq2 = CQ(equation);
                 if(eq1.equals(eq2))
                 {
-                    console.log("YES " + this.rt.eq + " = " + equation);
+                    //console.log("YES " + this.rt.eq + " = " + equation);
                     return true;
                 }
             }
@@ -1841,8 +1924,8 @@ var Game = {
                 }
                 var used_op = child.setOperationValues(this.operation_set, recommended_operation, this.solution, reCalc);
                 if (reCalc) {
-                    //Keep track of used operations to avoid using again
-                    excludeArray.push(used_op);
+                  //Keep track of used operations to avoid using again
+                  excludeArray.push(used_op);
                 }
             }
             if (reCalc) {
@@ -1859,8 +1942,8 @@ var Game = {
             else {
                 recommended_operation = parent.op;
             }
-            this.addToWeightedSet(recommended_operation)
-            parent.setOperationValues(this.operation_set, recommended_operation, this.solution, reCalc)
+            this.addToWeightedSet(recommended_operation);
+            parent.setOperationValues(this.operation_set, recommended_operation, this.solution, reCalc);
         }
     },
     //Clear all user values
@@ -2183,6 +2266,7 @@ var Game = {
           obj.size = parseInt(str.charAt(0));
           obj.key = str.substring(1);
 
+          //Note at this time obj.number_set is simply a numeric id
           obj.number_set = Game.numberSetById(obj.number_set);
           //TODO rationalize initialization process
           this.number_set = obj.number_set;
@@ -2237,8 +2321,8 @@ var Game = {
             for (var j = 0; j < group.sets.length; j++) {
                 var set = group.sets[j];
                 if (set.id == id) {
-                    this.number_set = set;
-                    return set;
+                    //clone this to avoid inadvertant pointer manipulations of source
+                    return $.extend(true, {}, set);
                 }
             }
         }
