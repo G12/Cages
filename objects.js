@@ -377,12 +377,10 @@ var Operations = {
     },
 
     subtract: function (array) {
-        //TODO sort?
         return Utl.makeSymbolicExpression(array, "-");
     },
 
     divide: function (array) {
-        //TODO sort?
         return Utl.makeSymbolicExpression(array, "/");
     },
 
@@ -683,72 +681,92 @@ var Cartouche_Objects = (function () {
         var divide = Math_ops.getIndexForName("divide");
 
         //TODO This can only be done for simple numeric expressions
-        if (Game.number_set.type == 0 && Utl.checkFlag(Game.operation_flags, CONST.OP_SORT_DESCENDING))
-        {
-          //TODO for no negative results re-order Highest val to lowest where recommended_operation is subtraction
-          //Only garanteed for two member arrays - see below for checking for negative results
-          if (subtract == recommended_operation || divide == recommended_operation) {
-            // sort the o array solution values in descending order
-            this.o.sort(function (a, b) {
-              //return b - a for descending
-              var x = a[0];
-              var y = a[1];
-              //Get operand from solution
-              var point = solution[y][x];
-              var opA = point[0];
-
-              x = b[0];
-              y = b[1];
-              //Get operand from solution
-              point = solution[y][x];
-              var opB = point[0];
-
-              //Get symbol for op
-              var symbolA = Game.getNumberSetExpressionByIndex(opA);
-              var symbolB = Game.getNumberSetExpressionByIndex(opB);
-
-              var intA = parseInt(symbolA);
-              var intB = parseInt(symbolB);
-
-              return intB - intA;
-
-            });
-          }
-        }
-        if(reCalc) //Must be allowed to change operator types for this operation
-        {
-          if (Utl.checkFlag(Game.operation_flags, CONST.OP_NO_NEGATIVES))
-          {
-            //Fix negative results (only possible with arrays larger than 2)
-            if (subtract == recommended_operation && this.o.length > 2) {
-              //get the subtraction result
-              var subtraction_result;
-              for (var i = 0; i < this.o.length; i++) {
-                var x = this.o[i][0];
-                var y = this.o[i][1];
+        if (Game.number_set.type == 0) {
+          if (Utl.checkFlag(Game.operation_flags, CONST.OP_SORT_DESCENDING)) {
+            //TODO for no negative results re-order Highest val to lowest where recommended_operation is subtraction
+            //Only garanteed for two member arrays - see below for checking for negative results
+            if (subtract == recommended_operation || divide == recommended_operation) {
+              // sort the o array solution values in descending order
+              this.o.sort(function (a, b) {
+                //return b - a for descending
+                var x = a[0];
+                var y = a[1];
                 //Get operand from solution
                 var point = solution[y][x];
-                var op = point[0];
-                var symbol = Game.getNumberSetExpressionByIndex(op);
-                var n = parseInt(symbol);
-                if (i == 0) {
-                  subtraction_result = n;
-                }
-                else {
-                  subtraction_result = subtraction_result - n;
-                }
+                var opA = point[0];
+
+                x = b[0];
+                y = b[1];
+                //Get operand from solution
+                point = solution[y][x];
+                var opB = point[0];
+
+                //Get symbol for op
+                var symbolA = Game.getNumberSetExpressionByIndex(opA);
+                var symbolB = Game.getNumberSetExpressionByIndex(opB);
+
+                var intA = parseInt(symbolA);
+                var intB = parseInt(symbolB);
+
+                return intB - intA;
+
+              });
+            }
+          }
+
+          if (reCalc) //Must be allowed to change operator types for this operation
+          {
+            var exclude_array = [];
+            //Test for any cages larger than 2 slated for division and change operator type
+            if (Utl.checkFlag(Game.operation_flags, CONST.OP_NO_FRACTIONS)) {
+              if ((this.o.length + this.c.length) > 2) //Cannot get remainder from more than two values
+              {
+                exclude_array.push(divide);
+                recommended_operation = Math_ops.getRecommendedOp(exclude_array, Game.operation_set);
               }
-              if (subtraction_result < 0) {
-                //If subtraction result is less than 0 substitute another operation type
-                //Get a random operation from the set excluding subtraction
-                recommended_operation = Math_ops.getRecommendedOp([subtract], Game.operation_set);
+            }
+            if (Utl.checkFlag(Game.operation_flags, CONST.OP_NO_NEGATIVES)) {
+              //Fix negative results (only possible with arrays larger than 2)
+              if (subtract == recommended_operation && this.o.length > 2) {
+                //get the subtraction result
+                var subtraction_result;
+                for (var i = 0; i < this.o.length; i++) {
+                  var x = this.o[i][0];
+                  var y = this.o[i][1];
+                  //Get operand from solution
+                  var point = solution[y][x];
+                  var op = point[0];
+                  var symbol = Game.getNumberSetExpressionByIndex(op);
+                  var n = parseInt(symbol);
+                  if (i == 0) {
+                    subtraction_result = n;
+                  }
+                  else {
+                    subtraction_result = subtraction_result - n;
+                  }
+                }
+                if (subtraction_result < 0) {
+                  //If subtraction result is less than 0 substitute another operation type
+                  //Get a random operation from the set excluding subtraction
+                  exclude_array.push(subtract);
+                  if (exclude_array.length >= Game.operation_set.length) //Big trouble
+                  {
+                    var msg = "No available operator types - Negative result is unavoidable.";
+                    alert(msg);
+                    console.log(msg);
+                  }
+                  else {
+                    recommended_operation = Math_ops.getRecommendedOp(exclude_array, Game.operation_set);
+                  }
+                }
               }
             }
           }
         }
 
         //Add symbolsArray from cage.
-        for (var i = 0; i < this.o.length; i++) {
+        for (var i = 0; i < this.o.length; i++)
+        {
             var x = this.o[i][0];
             var y = this.o[i][1];
             //Get operand from solution
@@ -785,7 +803,8 @@ var Cartouche_Objects = (function () {
           //For simple numeric operators if the equation result is negative
           //change the recommended_operation from subtract
           if (Game.number_set.type == 0) {
-            if (subtract == recommended_operation && Utl.checkFlag(Game.operation_flags, CONST.OP_NO_NEGATIVES)) {
+            if (subtract == recommended_operation && Utl.checkFlag(Game.operation_flags, CONST.OP_NO_NEGATIVES))
+            {
               //Test if equation result is less than 0
               var simplification = CQ(this.rt.eq).simplify().toString();
               if ("-" == simplification.charAt(0) && "-(0)" != simplification) {
@@ -815,14 +834,40 @@ var Cartouche_Objects = (function () {
         this.ctx.strokeStyle = "#78c9b3";
         this.ctx.fillStyle = "#78c9b3";
 
-        var simplification = CQ(this.rt.eq).simplify().toString();
-        simplification = Utl.replaceAll(simplification, "**", "^");
+        var simplification = null;
+        if (type == 0 && Utl.checkFlag(Game.operation_flags, CONST.OP_NO_FRACTIONS))
+        {
+          var array = this.rt.eq.split("/");
+          if(array.length == 2)
+          {
+            simplification = CQ(this.rt.eq).simplify().toString();
+            //Test for fraction
+            if(-1 != simplification.indexOf("/"))
+            {
+              array = simplification.split("/");
+              var div = Math.floor(array[0]/array[1]);
+              var rem = array[0] % array[1];
+              simplification = div + "r" + rem;
+            }
+          }
+          else
+          {
+            console.log("MODULUS ERROR for: " + this.rt.eq)
+          }
+        }
+        if(!simplification)
+        {
+          simplification = CQ(this.rt.eq).simplify().toString();
+          simplification = Utl.replaceAll(simplification, "**", "^");
 
-        //TODO investigate cause of -(0) bug
-        simplification = simplification == "-(0)" ? "0" : simplification;
+          //TODO investigate cause of -(0) bug
+          simplification = simplification == "-(0)" ? "0" : simplification;
 
-        //console.log("Basic Equation: " + this.rt.eq);
-        //console.log("Simplification: " + simplification);
+          //console.log("Basic Equation: " + this.rt.eq);
+          //console.log("Simplification: " + simplification);
+
+        }
+
 
         if (type == 0) {
             var w = CONST.G_WIDTH * Utl.widthFactor(simplification);
