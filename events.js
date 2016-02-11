@@ -481,7 +481,12 @@ var GameEvents = {
                     strExpression = Utl.replaceAll(strExpression, "**", "^");
                     Game.current_notes.current_expression.drawExpression(strExpression, false);
 
+                    //Update Game solution and notes if this is the main(top) expression item
                     if (Game.current_notes.current_expression.note.solution_index == 1) {
+
+                        //Update the userSolution for current cage
+                        Game.current_notes.current_expression.update(n);
+
                         //Update the playing board
                         GameEvents.updateGame(cage, x, y, n, false);
 

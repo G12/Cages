@@ -348,6 +348,88 @@ var Utl = {
 
 }
 
+var SimpleOperations = {
+
+  execute: function (name, termsArray) {
+    var array = this.termsToSimpleArray(termsArray);
+    switch (name) {
+      case "subtract":
+        return this.subtract(array);
+      case "divide":
+        return this.divide(array);
+      case "add":
+        return this.add(array);
+      case "multiply":
+        return this.multiply(array);
+      case "concatenate":
+        return this.concatenate(array);
+      case "gcf":
+        return this.greatest(array);
+      default:
+        return 0;
+    }
+  },
+  termsToSimpleArray: function(termsArray)
+  {
+    var array = [];
+    for(var i=0; i < termsArray.length; i++)
+    {
+      array.push(parseInt(termsArray[i].symbol));
+    }
+    return array;
+  },
+
+  greatest: function (array) {
+    var result = array[0];
+    for (var i = 1; i < array.length; i++) {
+      result = Utl.gcd(result, array[i]);
+    }
+    return Math.round(result * 100) / 100;
+  },
+
+  subtract: function (array) {
+    var result = array[0];
+    for (var i = 1; i < array.length; i++) {
+      result = result - array[i];
+    }
+    return result;
+  },
+
+  divide: function (array) {
+    var result = array[0];
+    for (var i = 1; i < array.length; i++) {
+      result = result / array[i];
+    }
+    return result;
+  },
+
+  add: function (array) {
+    var result = array[0];
+    for (var i = 1; i < array.length; i++) {
+      result = result + array[i];
+    }
+    return result;
+  },
+
+  multiply: function (array) {
+    var result = array[0];
+    for (var i = 1; i < array.length; i++) {
+      result = result * array[i];
+    }
+    return result;
+  },
+
+  concatenate: function (array) {
+     var result = array[0].toString();
+     for(var i=1; i < array.length; i++)
+     {
+     result = result + array[i].toString();
+     }
+     return parseInt(result);
+  }
+
+}
+
 var Operations = {
 
     execute: function (name, array) {
@@ -719,11 +801,25 @@ var Cartouche_Objects = (function () {
             var exclude_array = [];
             //Test for any cages larger than 2 slated for division and change operator type
             if (Utl.checkFlag(Game.operation_flags, CONST.OP_NO_FRACTIONS)) {
+              //Cannot do remainder division if the total of all terms is larger than 2
               if ((this.o.length + this.c.length) > 2) //Cannot get remainder from more than two values
               {
                 exclude_array.push(divide);
                 recommended_operation = Math_ops.getRecommendedOp(exclude_array, Game.operation_set);
               }
+              //If this childs parent array has more than one child cannot do remainder division
+              if((this.o.length == 2) && (this.siblings_count > 1))
+              {
+                exclude_array.push(divide);
+                recommended_operation = Math_ops.getRecommendedOp(exclude_array, Game.operation_set);
+              }
+              //If this parent has 2 and has more than one child cannot do remainder division
+              if((this.o.length == 2) && (this.c.length > 0))
+              {
+                exclude_array.push(divide);
+                recommended_operation = Math_ops.getRecommendedOp(exclude_array, Game.operation_set);
+              }
+
             }
             if (Utl.checkFlag(Game.operation_flags, CONST.OP_NO_NEGATIVES)) {
               //Fix negative results (only possible with arrays larger than 2)
@@ -800,16 +896,34 @@ var Cartouche_Objects = (function () {
         this.rt.eq = Operations.execute(operation.name, symbolsArray);
 
         if(reCalc) {
-          //For simple numeric operators if the equation result is negative
-          //change the recommended_operation from subtract
           if (Game.number_set.type == 0) {
+            //exclude_array = [];
+            if (Utl.checkFlag(Game.operation_flags, CONST.OP_NO_FRACTIONS))
+            {
+              //If I am a parent and have more than one child I cannot do remainder division
+              if(this.c.length > 1)
+              {
+                //make sure that if subtract fails that divide is not an option
+                exclude_array.push(divide);
+                if(divide == recommended_operation)
+                {
+                  recommended_operation = Math_ops.getRecommendedOp(exclude_array, Game.operation_set);
+                  operation = Math_ops.matrix[recommended_operation];
+                  this.rt.eq = Operations.execute(operation.name, symbolsArray);
+                }
+              }
+            }
+            //For simple numeric operators if the equation result is negative
+            //change the recommended_operation from subtract
             if (subtract == recommended_operation && Utl.checkFlag(Game.operation_flags, CONST.OP_NO_NEGATIVES))
             {
               //Test if equation result is less than 0
               var simplification = CQ(this.rt.eq).simplify().toString();
+              console.log("simplification = " + simplification);
               if ("-" == simplification.charAt(0) && "-(0)" != simplification) {
                 //if result is less than 0 change recommended_operation to a value other than subtract
-                recommended_operation = Math_ops.getRecommendedOp([subtract], Game.operation_set);
+                exclude_array.push(subtract);
+                recommended_operation = Math_ops.getRecommendedOp(exclude_array, Game.operation_set);
                 operation = Math_ops.matrix[recommended_operation];
                 this.rt.eq = Operations.execute(operation.name, symbolsArray);
               }
@@ -818,6 +932,37 @@ var Cartouche_Objects = (function () {
           this.op = Math_ops.getIndexForName(operation.name);
         }
         return recommended_operation;
+    }
+
+    Cage.prototype.getDivisionWithRemainderString = function()
+    {
+      var obj = this.getEquation(0);
+      if(obj.components.length == 2 ){
+        //Inner Cage divided by outer cage
+        var comp1 = obj.components[0];
+        var divisor = SimpleOperations.execute(Math_ops.matrix[comp1.op].name, comp1.terms);
+        var comp2 = obj.components[1];
+        var dividend = SimpleOperations.execute(Math_ops.matrix[comp2.op].name, comp2.terms);
+        var div = Math.floor(dividend / divisor);
+        var rem = dividend % divisor;
+        if (rem > 0) {
+          return div + "r" + rem;
+        }
+        return div;
+      }
+      else if(obj.components.length == 1 ){
+        //Largest divided by smallest
+        var comp1 = obj.components[0];
+        var dividend = parseInt(comp1.terms[0].symbol);
+        var divisor = parseInt(comp1.terms[1].symbol);
+        var div = Math.floor(dividend / divisor);
+        var rem = dividend % divisor;
+        if (rem > 0) {
+          return div + "r" + rem;
+        }
+        return div;
+      }
+      return null;
     }
 
     Cage.prototype.drawResultTag = function (x, y) {
@@ -837,22 +982,10 @@ var Cartouche_Objects = (function () {
         var simplification = null;
         if (type == 0 && Utl.checkFlag(Game.operation_flags, CONST.OP_NO_FRACTIONS))
         {
-          var array = this.rt.eq.split("/");
-          if(array.length == 2)
+          var name = Math_ops.matrix[this.op].name;
+          if(name == "divide")
           {
-            simplification = CQ(this.rt.eq).simplify().toString();
-            //Test for fraction
-            if(-1 != simplification.indexOf("/"))
-            {
-              array = simplification.split("/");
-              var div = Math.floor(array[0]/array[1]);
-              var rem = array[0] % array[1];
-              simplification = div + "r" + rem;
-            }
-          }
-          else
-          {
-            console.log("MODULUS ERROR for: " + this.rt.eq)
+            simplification = this.getDivisionWithRemainderString();
           }
         }
         if(!simplification)
@@ -2042,6 +2175,7 @@ var Game = {
             var cages = obj.c[i].c;
             for (var j = 0; j < cages.length; j++) {
                 var child = this.restoreCage(cages[j]);
+                child.siblings_count = cages.length;
                 cage.addChild(child);
             }
         }
@@ -3136,6 +3270,10 @@ var Display_Objects = (function () {
 
     Expression.prototype.update = function(n)
     {
+        //Note expression term update fix
+        var symbol = Game.getNumberSetExpressionByIndex(n);
+        this.component.symbol = symbol;
+        this.component.n = n;
         this.note.cage.updateUserSolution(this.component.x, this.component.y, n, this.note.solution_index);
     }
 
