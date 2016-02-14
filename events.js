@@ -231,6 +231,44 @@ var GameEvents = {
         alert("preview_canvas element not available");
       }
     },
+    configureMathOps: function(bitMask)
+    {
+      if(Utl.checkFlag(bitMask, CONST.G_ADD))
+      {
+        GameEvents.showInline("#opAdd");
+      }
+      else
+      {
+        GameEvents.hideInline("#opAdd");
+      }
+
+      if(Utl.checkFlag(bitMask, CONST.G_SUBTRACT))
+      {
+        GameEvents.showInline("#opSubtract");
+      }
+      else
+      {
+        GameEvents.hideInline("#opSubtract");
+      }
+
+      if(Utl.checkFlag(bitMask, CONST.G_MULTIPLY))
+      {
+        GameEvents.showInline("#opMultiply");
+      }
+      else
+      {
+        GameEvents.hideInline("#opMultiply");
+      }
+
+      if(Utl.checkFlag(bitMask, CONST.G_DIVIDE))
+      {
+        GameEvents.showInline("#opDivide");
+      }
+      else
+      {
+        GameEvents.hideInline("#opDivide");
+      }
+    },
     drawPage: function (obj) {
 
         //g_operationSet = obj.operation_set;
@@ -241,6 +279,9 @@ var GameEvents = {
             //If notes page was active close it now
             GameEvents.hide("#notes_window");
             GameEvents.show("#canvas-wrap");
+
+            //Configure the math operations bar
+            this.configureMathOps(obj.bitMask);
 
             //Restore the size and key, and Expand properties on the compressed object
             obj = Game.expand(obj);
@@ -750,7 +791,7 @@ var GameEvents = {
     },
 
     //////////////////////////////////////////////////   Utilities   ///////////////////////////////////
-    show: function show(id) {
+    show: function (id) {
         $(id).removeClass("hide");
         $(id).addClass("show");
     },
@@ -758,6 +799,16 @@ var GameEvents = {
     hide: function (id) {
         $(id).removeClass("show");
         $(id).addClass("hide");
+    },
+
+    showInline: function (id) {
+      $(id).removeClass("hide");
+      $(id).addClass("showInline");
+    },
+
+    hideInline: function (id) {
+      $(id).removeClass("showInline");
+      $(id).addClass("hide");
     }
 
 }

@@ -162,6 +162,10 @@ td:hover{
 	border-radius: 8px;
 }
 
+.showInline{
+  display:inline-block;
+}
+
 .show{
 	display:block;
 }
