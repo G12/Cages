@@ -345,8 +345,9 @@ var GameEvents = {
     updateOnStateChanged: function (str) {
         var state = JSON.parse(str);
         Game.updateSolutions(state);
-        var count = Game.scanSuccess().count;
-        $("#hint").html("Hint: " + count + " correct");
+        var obj = Game.scanSuccess();
+        Game.status = obj;
+        $("#hint").html("Hint: " + obj.count + " correct");
         GameEvents.drawOverLay(Game.solution, Game.getSize());
     },
 
@@ -379,6 +380,7 @@ var GameEvents = {
     winningSolution: function () {
         //Check for winner - Fast
         var obj = Game.scanSuccess();
+        Game.status = obj;
         $("#hint").html("Hint: " + obj.count + " correct");
         var square = Game.getSize() * Game.getSize();
         //TODO uncomment after testing phase
@@ -388,6 +390,8 @@ var GameEvents = {
         //{
         //Test remaining cages using solution processing - Slow
         if (Game.scanEccentrics()) {
+            obj.success = true;
+            Game.status = obj;
             return true;
         }
         //}
@@ -490,8 +494,9 @@ var GameEvents = {
                         GameEvents.drawCanvasCell(Game.current_selection, x, y)
 
                         //Check for winner - Fast
-                        var count = Game.scanSuccess().count;
-                        $("#hint").html("Hint: " + count + " correct");
+                        var obj = Game.scanSuccess();
+                        Game.status = obj;
+                        $("#hint").html("Hint: " + obj.count + " correct");
 
                         GameEvents.scanForDuplicates();
 
@@ -594,8 +599,9 @@ var GameEvents = {
                   GameEvents.drawCanvasCell(Game.current_selection, x, y)
 
                   //Check for winner - Fast
-                  var count = Game.scanSuccess().count;
-                  $("#hint").html("Hint: " + count + " correct");
+                  var obj = Game.scanSuccess();
+                  Game.status = obj;
+                  $("#hint").html("Hint: " + obj.count + " correct");
 
                   GameEvents.scanForDuplicates();
                   //Alaways save game after this
@@ -706,8 +712,9 @@ var GameEvents = {
                 GameEvents.drawCanvasCell(Game.current_selection, x, y)
 
                 //Check for winner - Fast
-                var count = Game.scanSuccess().count;
-                $("#hint").html("Hint: " + count + " correct");
+                var obj = Game.scanSuccess();
+                Game.status = obj;
+                $("#hint").html("Hint: " + obj.count + " correct");
 
                 GameEvents.scanForDuplicates();
 

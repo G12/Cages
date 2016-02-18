@@ -1917,6 +1917,7 @@ var Game = {
     //Extra information Added Jan 17 2016
     name:null,
     id:null,
+    status:null,
 
     //New math operation and solution flags bitmap
     operation_flags:CONST.OP_STATIC,       //Uses the supplied operator (Cage.op) values
@@ -2352,8 +2353,9 @@ var Game = {
         obj.number_set = this.number_set.id;
 
         //Extra information Added Jan 17 2016
-        if(this.name){obj.name = this.name};
+        if(this.name){obj.name = this.name}
         if(this.id){obj.id = this.id}
+        if(this.status){obj.status = this.status}
 
         if (CONST.G_SAVE_TEMPLATE != scope) {
             obj.solution = $.extend(true, [], this.solution);
