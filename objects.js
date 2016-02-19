@@ -848,7 +848,7 @@ var Cartouche_Objects = (function () {
                   if (exclude_array.length >= Game.operation_set.length) //Big trouble
                   {
                     var msg = "No available operator types - Negative result is unavoidable.";
-                    alert(msg);
+                    //alert(msg);
                     console.log(msg);
                   }
                   else {
