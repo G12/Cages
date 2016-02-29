@@ -1918,6 +1918,7 @@ var Game = {
     name:null,
     id:null,
     status:null,
+    hints:0, //Added Feb 25
 
     //New math operation and solution flags bitmap
     operation_flags:CONST.OP_STATIC,       //Uses the supplied operator (Cage.op) values
@@ -1951,6 +1952,12 @@ var Game = {
             //Extra information Added Jan 17 2016
             if(obj.name){this.name = obj.name};
             if(obj.id){this.id = obj.id}
+            if(obj.hints){
+              this.hints = obj.hints
+            }else {
+              this.hints = 0;
+              obj.hints = 0;
+            }
 
             //Get operation flags from supplied json - NOTE allow case where flag is zero
             if(obj.operation_flags || obj.operation_flags == CONST.OP_STATIC)
@@ -2283,6 +2290,23 @@ var Game = {
         }
         return res;
     },
+    //Scan the solution and return array of empty positions
+    scanForEmptys: function (solution) {
+      var res = [];
+      //Scan Rows
+      for (var y = 0; y < this.size; y++)
+      {
+        for (var x = 0; x < this.size; x++)
+        {
+          var g = solution[y][x][1];
+          if(!g)
+          {
+            res.push([y,x]);
+          }
+        }
+      }
+      return res;
+    },
     ////////////////////////////////////  page construction  /////////////////////////////
     //Validate and place cage
     placeCage: function (cage_data, x, y, current_op) {
@@ -2356,6 +2380,7 @@ var Game = {
         if(this.name){obj.name = this.name}
         if(this.id){obj.id = this.id}
         if(this.status){obj.status = this.status}
+        if(this.hints){obj.hints = this.hints}
 
         if (CONST.G_SAVE_TEMPLATE != scope) {
             obj.solution = $.extend(true, [], this.solution);

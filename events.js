@@ -776,8 +776,121 @@ var GameEvents = {
         });
 
         $("#cartoucheToolQuestion").click(function (e) {
-            e.preventDefault();
-            alert("cartoucheToolQuestion");
+          e.preventDefault();
+          //If a game cell is selected
+          if (Game.current_selection) {
+            var x = Game.current_selection.dataset.x;
+            var y = Game.current_selection.dataset.y;
+
+            var cage = Game.getCage(x, y);
+
+            //If Notes page is not showing
+            if (!Game.current_notes) {
+
+              if(!Game.solution[y][x][1])
+              {
+                if(confirm("Add Hint to Selected Location?"))
+                {
+                  Game.hints = Game.hints + 1;
+                  console.log("Debug1: " + Game.hints);
+
+                  GameEvents.updateGame(cage, x, y, Game.solution[y][x][0], false);
+                  //Alaways save game after this
+                  if(GameEvents.g_auto_save)
+                  {
+                    GameEvents.saveGame(CONST.G_SAVE_GAME, false);
+                  }
+                }
+              }
+              else
+              {
+                if(confirm("Add Hint to Random Location?"))
+                {
+                  Game.hints = Game.hints + 1;
+                  console.log("Debug2: " + Game.hints);
+
+                  var empties = Game.scanForEmptys(Game.solution);
+                  var index = Utl.getRandomInt(0,empties.length-1);
+                  var y = empties[index][0];
+                  var x = empties[index][1];
+                  cage = Game.getCage(x, y);
+                  var temp = Game.current_selection;
+                  Game.current_selection = $("#overlay_table").find("[data-x='" + x + "'][data-y='" + y + "']")[0];
+                  GameEvents.updateGame(cage, x, y, Game.solution[y][x][0], false);
+                  //Alaways save game after this
+                  if(GameEvents.g_auto_save)
+                  {
+                    GameEvents.saveGame(CONST.G_SAVE_GAME, false);
+                  }
+                  Game.current_selection = temp;
+                }
+              }
+            }
+            else //Notes page is showing
+            {
+              if(Game.current_notes.current_expression)
+              {
+                var x = Game.current_notes.current_expression.component.x;
+                var y = Game.current_notes.current_expression.component.y;
+                if(confirm("Add Hint to Selected Term?"))
+                {
+                  Game.hints = Game.hints + 1;
+                  console.log("Debug3: " + Game.hints);
+
+                  var n = Game.solution[y][x][0];
+                  var strExpression = Game.getNumberSetExpressionByIndex(n);
+                  strExpression = Utl.replaceAll(strExpression, "**", "^");
+                  Game.current_notes.current_expression.drawExpression(strExpression, false);
+                  //Update Game solution and notes if this is the main(top) expression item
+                  if (Game.current_notes.current_expression.note.solution_index == 1)
+                  {
+                    //Update the userSolution for current cage
+                    Game.current_notes.current_expression.update(n);
+
+                    //Update the playing board
+                    cage = Game.getCage(x, y);
+                    GameEvents.updateGame(cage, x, y, n, false);
+
+                    //Alaways save game after this
+                    if(GameEvents.g_auto_save)
+                    {
+                      GameEvents.saveGame(CONST.G_SAVE_GAME, false);
+                    }
+                  }
+                  else {
+                    Game.current_notes.current_expression.update(n);
+                  }
+                  //paint all duplicate terms red
+                  Game.current_notes.setDuplicates();
+                }
+              }
+            }
+          }
+          else {
+            //If Notes page is not showing
+            if (!Game.current_notes) {
+              if(confirm("Add Hint to Random Location?"))
+              {
+                Game.hints = Game.hints + 1;
+                console.log("Debug4: " + Game.hints);
+
+                var empties = Game.scanForEmptys(Game.solution);
+                var index = Utl.getRandomInt(0,empties.length-1);
+                var y = empties[index][0];
+                var x = empties[index][1];
+                var cage = Game.getCage(x, y);
+
+                Game.current_selection = $("#overlay_table").find("[data-x='" + x + "'][data-y='" + y + "']")[0];
+                GameEvents.updateGame(cage, x, y, Game.solution[y][x][0], false);
+                //Alaways save game after this
+                if(GameEvents.g_auto_save)
+                {
+                  GameEvents.saveGame(CONST.G_SAVE_GAME, false);
+                }
+                Game.current_selection = null;
+              }
+            }
+          }
         });
 
         $("#cartoucheToolRestart").click(function (e) {
