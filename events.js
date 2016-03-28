@@ -23,6 +23,8 @@
  THE SOFTWARE.
  **/
 
+var ZOOM_ENABLED = false;
+
 var GameEvents = {
 
     g_auto_save:false,
@@ -59,9 +61,21 @@ var GameEvents = {
                 //Canvas width and height slightly smaller than td
                 //var h2 = h*.95;
 
-                var style = 'style="height:' + h + 'px; width:' + w + 'px;"';
+                if(ZOOM_ENABLED)
+                {
+                  var style = 'class="zoomTarget" style="height:' + h + 'px; width:' + w + 'px;"';
+                }
+                else
+                {
+                  var style = 'style="height:' + h + 'px; width:' + w + 'px;"';
+                }
 
                 var $td = $('<td ' + style + ' >').appendTo($tr);
+
+                if(ZOOM_ENABLED)
+                {
+                  $(".zoomTarget").zoomTarget({targetsize:0.45});
+                }
 
                 var $canvas = $('<canvas class="cell_canvas" width="' + w + 'px" height="' + h + 'px" data-x="' + x + '" data-y="' + y + '"></canvas>').appendTo($td);
 
@@ -190,98 +204,12 @@ var GameEvents = {
 
     },
     drawPreview: function(obj, canvas_id) {
-      var canvas = document.getElementById(canvas_id);
-      //Cannot do anything without a canvas
-      if (canvas.getContext) {
-
-        GameEvents.hide("#notes_window");
-        GameEvents.show("#canvas-wrap");
-
-        //Restore the size and key, and Expand properties on the compressed object
-        obj = Game.expand(obj);
-        var size = obj.size;
-
-        var ctx = canvas.getContext('2d');
-        ctx.setTransform(1, 0, 0, 1, 0, 0); //Default
-
-        var scale = Math.round(GameEvents.g_width / obj.size);
-        ctx.scale(scale, scale);
-        var length = obj.size * scale + 2;
-        $("#canvas-wrap").height(length);
-        $("#canvas-wrap").width(length);
-
-        //Minimum requirements for a Game
-        Game.init(ctx, size, obj);
-
-        //Generate the solution - If there is a key then the saved solution will be generated
-        //using the key
-        var key = Game.shuffle(obj.key, obj.solution);
-
-        //Using the expanded saved object copy all properties to the
-        //static Game
-        Game.restore(obj);
-
-        //Iterate through Cages setting appropriate operation values
-        Game.setOperationValues();
-
-        Game.reDraw(canvas);
-
-      }
-      else {
-        alert("preview_canvas element not available");
-      }
-    },
-    configureMathOps: function(bitMask)
-    {
-      if(Utl.checkFlag(bitMask, CONST.G_ADD))
-      {
-        GameEvents.showInline("#opAdd");
-      }
-      else
-      {
-        GameEvents.hideInline("#opAdd");
-      }
-
-      if(Utl.checkFlag(bitMask, CONST.G_SUBTRACT))
-      {
-        GameEvents.showInline("#opSubtract");
-      }
-      else
-      {
-        GameEvents.hideInline("#opSubtract");
-      }
-
-      if(Utl.checkFlag(bitMask, CONST.G_MULTIPLY))
-      {
-        GameEvents.showInline("#opMultiply");
-      }
-      else
-      {
-        GameEvents.hideInline("#opMultiply");
-      }
-
-      if(Utl.checkFlag(bitMask, CONST.G_DIVIDE))
-      {
-        GameEvents.showInline("#opDivide");
-      }
-      else
-      {
-        GameEvents.hideInline("#opDivide");
-      }
-    },
-    drawPage: function (obj) {
-
-        //g_operationSet = obj.operation_set;
-        //Game.operation_set = obj.operation_set;
-        var canvas = document.getElementById('canvas');
+        var canvas = document.getElementById(canvas_id);
         //Cannot do anything without a canvas
         if (canvas.getContext) {
-            //If notes page was active close it now
+
             GameEvents.hide("#notes_window");
             GameEvents.show("#canvas-wrap");
-
-            //Configure the math operations bar
-            this.configureMathOps(obj.bitMask);
 
             //Restore the size and key, and Expand properties on the compressed object
             obj = Game.expand(obj);
@@ -312,6 +240,92 @@ var GameEvents = {
 
             Game.reDraw(canvas);
 
+        }
+        else {
+            alert("preview_canvas element not available");
+        }
+    },
+    configureMathOps: function(bitMask)
+    {
+        if(Utl.checkFlag(bitMask, CONST.G_ADD))
+        {
+            GameEvents.showInline("#opAdd");
+        }
+        else
+        {
+            GameEvents.hideInline("#opAdd");
+        }
+
+        if(Utl.checkFlag(bitMask, CONST.G_SUBTRACT))
+        {
+            GameEvents.showInline("#opSubtract");
+        }
+        else
+        {
+            GameEvents.hideInline("#opSubtract");
+        }
+
+        if(Utl.checkFlag(bitMask, CONST.G_MULTIPLY))
+        {
+            GameEvents.showInline("#opMultiply");
+        }
+        else
+        {
+            GameEvents.hideInline("#opMultiply");
+        }
+
+        if(Utl.checkFlag(bitMask, CONST.G_DIVIDE))
+        {
+            GameEvents.showInline("#opDivide");
+        }
+        else
+        {
+            GameEvents.hideInline("#opDivide");
+        }
+    },
+    drawPage: function (obj) {
+
+        //g_operationSet = obj.operation_set;
+        //Game.operation_set = obj.operation_set;
+        var canvas = document.getElementById('canvas');
+        //Cannot do anything without a canvas
+        if (canvas.getContext) {
+            //If notes page was active close it now
+            GameEvents.hide("#notes_window");
+            GameEvents.show("#canvas-wrap");
+
+            //Restore the size and key, and Expand properties on the compressed object
+            obj = Game.expand(obj);
+            var size = obj.size;
+
+            var ctx = canvas.getContext('2d');
+            ctx.setTransform(1, 0, 0, 1, 0, 0); //Default
+
+            var scale = Math.round(GameEvents.g_width / obj.size);
+            ctx.scale(scale, scale);
+            var length = obj.size * scale + 2;
+            $("#canvas-wrap").height(length);
+            $("#canvas-wrap").width(length);
+
+            //Minimum requirements for a Game
+            Game.init(ctx, size, obj);
+
+            //Generate the solution - If there is a key then the saved solution will be generated
+            //using the key
+            var key = Game.shuffle(obj.key, obj.solution);
+
+            //Using the expanded saved object copy all properties to the
+            //static Game
+            Game.restore(obj);
+
+            //Iterate through Cages setting appropriate operation values
+            Game.setOperationValues();
+
+            //Configure the math operations bar after all operation values have been set
+            this.configureMathOps(Math_ops.toBitmask(Game.operation_set)); // obj.bitMask);
+
+            Game.reDraw(canvas);
+
             GameEvents.drawOverLay(Game.solution, Game.getSize());
 
             GameEvents.drawNumberButtons(Game.getSize());
@@ -327,18 +341,18 @@ var GameEvents = {
 
     startTimer: function(seconds)
     {
-      seconds = seconds || null;
+        seconds = seconds || null;
 
-      currentGame.time.reset();
+        currentGame.time.reset();
 
-      if (seconds !== null) {
-        currentGame.time.start(seconds*1000);
-      }else {
-        //Start the timer now
-        currentGame.time.start();
-      }
+        if (seconds !== null) {
+            currentGame.time.start(seconds*1000);
+        }else {
+            //Start the timer now
+            currentGame.time.start();
+        }
 
-      g_gameOn = true;
+        g_gameOn = true;
 
     },
 
@@ -438,20 +452,20 @@ var GameEvents = {
         //alert("GameEvents.saveCallback" + JSON.stringify(GameEvents.saveCallback));
         if(GameEvents.saveCallback)
         {
-          var obj = Game.compress(saveMode);
-          if(GameEvents.g_save_as_object)
-          {
-            GameEvents.saveCallback(obj, saveMode, game_complete);
-          }
-          else {
+            var obj = Game.compress(saveMode);
+            if(GameEvents.g_save_as_object)
+            {
+                GameEvents.saveCallback(obj, saveMode, game_complete);
+            }
+            else {
 
-            var strCages = JSON.stringify(obj);
-            GameEvents.saveCallback(strCages, saveMode, game_complete);
-          }
+                var strCages = JSON.stringify(obj);
+                GameEvents.saveCallback(strCages, saveMode, game_complete);
+            }
         }
         else
         {
-          alert("GameEvents.saveCallback is not set");
+            alert("GameEvents.saveCallback is not set");
         }
     },
 
@@ -503,7 +517,7 @@ var GameEvents = {
                         //Alaways save game after this
                         if(GameEvents.g_auto_save)
                         {
-                          GameEvents.saveGame(CONST.G_SAVE_GAME, false);
+                            GameEvents.saveGame(CONST.G_SAVE_GAME, false);
                         }
 
                         return;
@@ -514,7 +528,7 @@ var GameEvents = {
                     //Alaways save game after this
                     if(GameEvents.g_auto_save)
                     {
-                      GameEvents.saveGame(CONST.G_SAVE_GAME, false);
+                        GameEvents.saveGame(CONST.G_SAVE_GAME, false);
                     }
 
 
@@ -539,7 +553,7 @@ var GameEvents = {
                         //Alaways save game after this
                         if(GameEvents.g_auto_save)
                         {
-                          GameEvents.saveGame(CONST.G_SAVE_GAME, false);
+                            GameEvents.saveGame(CONST.G_SAVE_GAME, false);
                         }
 
                     }
@@ -569,59 +583,59 @@ var GameEvents = {
         var table_timeoutId = 0;
 
         $("#overlay table").mousedown(function(e) {
-          table_timeoutId = setTimeout(function(){
-            if (Game.current_selection) {
-              $(Game.current_selection).addClass("deselected");
-              $(Game.current_selection).removeClass("selected");
-            }
-            if ("CANVAS" == e.target.tagName) {
-              Game.current_selection = e.target;
-              $(Game.current_selection).addClass("selected");
-              $(Game.current_selection).removeClass("deselected");
-            }
-            var n = prompt("Enter Number Code");
-            if (n != null)
-            {
-              if(n < 1 || n > Game.number_set.set.length)
-              {
-                return;
-              }
-              //If a game cell is selected
-              if (Game.current_selection) {
-                var x = Game.current_selection.dataset.x;
-                var y = Game.current_selection.dataset.y;
-                var cage = Game.getCage(x, y);
-                //If n equals current value then erase
-                if (Game.solution[y][x][1] == n) {
-                  //Update the user solution array and the global solution
-                  //and Update the History stack
-                  cage.updateUserSolution(x, y, null);
-                  GameEvents.drawCanvasCell(Game.current_selection, x, y)
-
-                  //Check for winner - Fast
-                  var obj = Game.scanSuccess();
-                  Game.status = obj;
-                  $("#hint").html("Hint: " + obj.count + " correct");
-
-                  GameEvents.scanForDuplicates();
-                  //Alaways save game after this
-                  if(GameEvents.g_auto_save)
-                  {
-                    GameEvents.saveGame(CONST.G_SAVE_GAME, false);
-                  }
-                  return;
+            table_timeoutId = setTimeout(function(){
+                if (Game.current_selection) {
+                    $(Game.current_selection).addClass("deselected");
+                    $(Game.current_selection).removeClass("selected");
                 }
-                GameEvents.updateGame(cage, x, y, n, false);
-                //Alaways save game after this
-                if(GameEvents.g_auto_save)
+                if ("CANVAS" == e.target.tagName) {
+                    Game.current_selection = e.target;
+                    $(Game.current_selection).addClass("selected");
+                    $(Game.current_selection).removeClass("deselected");
+                }
+                var n = prompt("Enter Number Code");
+                if (n != null)
                 {
-                  GameEvents.saveGame(CONST.G_SAVE_GAME, false);
+                    if(n < 1 || n > Game.number_set.set.length)
+                    {
+                        return;
+                    }
+                    //If a game cell is selected
+                    if (Game.current_selection) {
+                        var x = Game.current_selection.dataset.x;
+                        var y = Game.current_selection.dataset.y;
+                        var cage = Game.getCage(x, y);
+                        //If n equals current value then erase
+                        if (Game.solution[y][x][1] == n) {
+                            //Update the user solution array and the global solution
+                            //and Update the History stack
+                            cage.updateUserSolution(x, y, null);
+                            GameEvents.drawCanvasCell(Game.current_selection, x, y)
+
+                            //Check for winner - Fast
+                            var obj = Game.scanSuccess();
+                            Game.status = obj;
+                            $("#hint").html("Hint: " + obj.count + " correct");
+
+                            GameEvents.scanForDuplicates();
+                            //Alaways save game after this
+                            if(GameEvents.g_auto_save)
+                            {
+                                GameEvents.saveGame(CONST.G_SAVE_GAME, false);
+                            }
+                            return;
+                        }
+                        GameEvents.updateGame(cage, x, y, n, false);
+                        //Alaways save game after this
+                        if(GameEvents.g_auto_save)
+                        {
+                            GameEvents.saveGame(CONST.G_SAVE_GAME, false);
+                        }
+                    }
                 }
-              }
-            }
-          }, 1000);
+            }, 1000);
         }).bind('mouseup mouseleave', function(e) {
-          clearTimeout(table_timeoutId);
+            clearTimeout(table_timeoutId);
         });
 
 
@@ -661,19 +675,19 @@ var GameEvents = {
             e.preventDefault();
             //If Notes page is not showing
             if (!Game.current_notes) {
-              //alert("cartoucheToolUndo");
-              var str = History_Stack.getNext();
-              if (str) {
-                console.log(str);
-                GameEvents.updateOnStateChanged(str);
+                //alert("cartoucheToolUndo");
+                var str = History_Stack.getNext();
+                if (str) {
+                    console.log(str);
+                    GameEvents.updateOnStateChanged(str);
 
-                //Alaways save game after this
-                if(GameEvents.g_auto_save)
-                {
-                  GameEvents.saveGame(CONST.G_SAVE_GAME, false);
+                    //Alaways save game after this
+                    if(GameEvents.g_auto_save)
+                    {
+                        GameEvents.saveGame(CONST.G_SAVE_GAME, false);
+                    }
+
                 }
-
-              }
             }
         });
 
@@ -681,19 +695,19 @@ var GameEvents = {
             e.preventDefault();
             //If Notes page is not showing
             if (!Game.current_notes) {
-              //alert("cartoucheToolRedo");
-              var str = History_Stack.getPrevious();
-              if (str) {
-                console.log(str);
-                GameEvents.updateOnStateChanged(str);
+                //alert("cartoucheToolRedo");
+                var str = History_Stack.getPrevious();
+                if (str) {
+                    console.log(str);
+                    GameEvents.updateOnStateChanged(str);
 
-                //Alaways save game after this
-                if(GameEvents.g_auto_save)
-                {
-                  GameEvents.saveGame(CONST.G_SAVE_GAME, false);
+                    //Alaways save game after this
+                    if(GameEvents.g_auto_save)
+                    {
+                        GameEvents.saveGame(CONST.G_SAVE_GAME, false);
+                    }
+
                 }
-
-              }
             }
         });
 
@@ -701,30 +715,30 @@ var GameEvents = {
             e.preventDefault();
             //If Notes page is not showing
             if (!Game.current_notes) {
-              if (Game.current_selection) {
-                var x = Game.current_selection.dataset.x;
-                var y = Game.current_selection.dataset.y;
-                var cage = Game.getCage(x, y);
+                if (Game.current_selection) {
+                    var x = Game.current_selection.dataset.x;
+                    var y = Game.current_selection.dataset.y;
+                    var cage = Game.getCage(x, y);
 
-                //Update the user solution array and the global solution
-                //and Update the History stack
-                cage.updateUserSolution(x, y, null);
-                GameEvents.drawCanvasCell(Game.current_selection, x, y)
+                    //Update the user solution array and the global solution
+                    //and Update the History stack
+                    cage.updateUserSolution(x, y, null);
+                    GameEvents.drawCanvasCell(Game.current_selection, x, y)
 
-                //Check for winner - Fast
-                var obj = Game.scanSuccess();
-                Game.status = obj;
-                $("#hint").html("Hint: " + obj.count + " correct");
+                    //Check for winner - Fast
+                    var obj = Game.scanSuccess();
+                    Game.status = obj;
+                    $("#hint").html("Hint: " + obj.count + " correct");
 
-                GameEvents.scanForDuplicates();
+                    GameEvents.scanForDuplicates();
 
-                //Alaways save game after this
-                if (GameEvents.g_auto_save) {
-                  GameEvents.saveGame(CONST.G_SAVE_GAME, false);
+                    //Alaways save game after this
+                    if (GameEvents.g_auto_save) {
+                        GameEvents.saveGame(CONST.G_SAVE_GAME, false);
+                    }
+
+                    return;
                 }
-
-                return;
-              }
             }
         });
 
@@ -746,11 +760,11 @@ var GameEvents = {
                 }
                 else {
 
-                  //Alaways save game after this
-                  if(GameEvents.g_auto_save)
-                  {
-                    GameEvents.saveGame(CONST.G_SAVE_GAME, false);
-                  }
+                    //Alaways save game after this
+                    if(GameEvents.g_auto_save)
+                    {
+                        GameEvents.saveGame(CONST.G_SAVE_GAME, false);
+                    }
 
                 }
 
@@ -775,122 +789,153 @@ var GameEvents = {
             GameEvents.g_restore = !GameEvents.g_restore;
         });
 
-        $("#cartoucheToolQuestion").click(function (e) {
-          e.preventDefault();
-          //If a game cell is selected
-          if (Game.current_selection) {
-            var x = Game.current_selection.dataset.x;
-            var y = Game.current_selection.dataset.y;
-
-            var cage = Game.getCage(x, y);
-
-            //If Notes page is not showing
-            if (!Game.current_notes) {
-
-              if(!Game.solution[y][x][1])
-              {
-                if(confirm("Add Hint to Selected Location?"))
-                {
-                  Game.hints = Game.hints + 1;
-                  console.log("Debug1: " + Game.hints);
-
-                  GameEvents.updateGame(cage, x, y, Game.solution[y][x][0], false);
-                  //Alaways save game after this
-                  if(GameEvents.g_auto_save)
-                  {
-                    GameEvents.saveGame(CONST.G_SAVE_GAME, false);
-                  }
-                }
-              }
-              else
-              {
-                if(confirm("Add Hint to Random Location?"))
-                {
-                  Game.hints = Game.hints + 1;
-                  console.log("Debug2: " + Game.hints);
-
-                  var empties = Game.scanForEmptys(Game.solution);
-                  var index = Utl.getRandomInt(0,empties.length-1);
-                  var y = empties[index][0];
-                  var x = empties[index][1];
-                  cage = Game.getCage(x, y);
-                  var temp = Game.current_selection;
-                  Game.current_selection = $("#overlay_table").find("[data-x='" + x + "'][data-y='" + y + "']")[0];
-                  GameEvents.updateGame(cage, x, y, Game.solution[y][x][0], false);
-                  //Alaways save game after this
-                  if(GameEvents.g_auto_save)
-                  {
-                    GameEvents.saveGame(CONST.G_SAVE_GAME, false);
-                  }
-                  Game.current_selection = temp;
-                }
-              }
-            }
-            else //Notes page is showing
+        $("#cartoucheToolQuestion").click(function (e)
+        {
+            e.preventDefault();
+            var confirmed = true;
+            //If a game cell is selected
+            if (Game.current_selection)
             {
-              if(Game.current_notes.current_expression)
-              {
-                var x = Game.current_notes.current_expression.component.x;
-                var y = Game.current_notes.current_expression.component.y;
-                if(confirm("Add Hint to Selected Term?"))
-                {
-                  Game.hints = Game.hints + 1;
-                  console.log("Debug3: " + Game.hints);
+                var x = Game.current_selection.dataset.x;
+                var y = Game.current_selection.dataset.y;
 
-                  var n = Game.solution[y][x][0];
-                  var strExpression = Game.getNumberSetExpressionByIndex(n);
-                  strExpression = Utl.replaceAll(strExpression, "**", "^");
-                  Game.current_notes.current_expression.drawExpression(strExpression, false);
-                  //Update Game solution and notes if this is the main(top) expression item
-                  if (Game.current_notes.current_expression.note.solution_index == 1)
-                  {
-                    //Update the userSolution for current cage
-                    Game.current_notes.current_expression.update(n);
-
-                    //Update the playing board
-                    cage = Game.getCage(x, y);
-                    GameEvents.updateGame(cage, x, y, n, false);
-
-                    //Alaways save game after this
-                    if(GameEvents.g_auto_save)
-                    {
-                      GameEvents.saveGame(CONST.G_SAVE_GAME, false);
-                    }
-                  }
-                  else {
-                    Game.current_notes.current_expression.update(n);
-                  }
-                  //paint all duplicate terms red
-                  Game.current_notes.setDuplicates();
-                }
-              }
-            }
-          }
-          else {
-            //If Notes page is not showing
-            if (!Game.current_notes) {
-              if(confirm("Add Hint to Random Location?"))
-              {
-                Game.hints = Game.hints + 1;
-                console.log("Debug4: " + Game.hints);
-
-                var empties = Game.scanForEmptys(Game.solution);
-                var index = Utl.getRandomInt(0,empties.length-1);
-                var y = empties[index][0];
-                var x = empties[index][1];
                 var cage = Game.getCage(x, y);
-
-                Game.current_selection = $("#overlay_table").find("[data-x='" + x + "'][data-y='" + y + "']")[0];
-                GameEvents.updateGame(cage, x, y, Game.solution[y][x][0], false);
-                //Alaways save game after this
-                if(GameEvents.g_auto_save)
+                //If Notes page is not showing
+                if (!Game.current_notes)
                 {
-                  GameEvents.saveGame(CONST.G_SAVE_GAME, false);
+
+                    if(!Game.solution[y][x][1])
+                    {
+                        if(Game.confirm_hint)
+                        {
+                            if(!confirm("Add Hint to Selected Location?"))
+                            {
+                                confirmed = false;
+                            }
+                        }
+                        if(confirmed)
+                        {
+                            Game.hints = Game.hints + 1;
+
+                            GameEvents.updateGame(cage, x, y, Game.solution[y][x][0], false);
+                            //Alaways save game after this
+                            if(GameEvents.g_auto_save)
+                            {
+                                GameEvents.saveGame(CONST.G_SAVE_GAME, false);
+                            }
+                        }
+                    }
+                    else
+                    {
+                        if(Game.confirm_hint)
+                        {
+                            if(!confirm("Add Hint to Random Location?"))
+                            {
+                                confirmed = false;
+                            }
+                        }
+                        if(confirmed)
+                        {
+                            Game.hints = Game.hints + 1;
+
+                            var empties = Game.scanForEmptys(Game.solution);
+                            var index = Utl.getRandomInt(0,empties.length);
+                            var y = empties[index][0];
+                            var x = empties[index][1];
+                            cage = Game.getCage(x, y);
+                            var temp = Game.current_selection;
+                            Game.current_selection = $("#overlay_table").find("[data-x='" + x + "'][data-y='" + y + "']")[0];
+                            GameEvents.updateGame(cage, x, y, Game.solution[y][x][0], false);
+                            //Alaways save game after this
+                            if(GameEvents.g_auto_save)
+                            {
+                                GameEvents.saveGame(CONST.G_SAVE_GAME, false);
+                            }
+                            Game.current_selection = temp;
+                        }
+                    }
                 }
-                Game.current_selection = null;
-              }
+                else //Notes page is showing
+                {
+                    if(Game.current_notes.current_expression)
+                    {
+                        var x = Game.current_notes.current_expression.component.x;
+                        var y = Game.current_notes.current_expression.component.y;
+
+                        if(Game.confirm_hint)
+                        {
+                            if(!confirm("Add Hint to Selected Term?"))
+                            {
+                                confirmed = false;
+                            }
+                        }
+                        if(confirmed)
+                        {
+                            Game.hints = Game.hints + 1;
+
+                            var n = Game.solution[y][x][0];
+                            var strExpression = Game.getNumberSetExpressionByIndex(n);
+                            strExpression = Utl.replaceAll(strExpression, "**", "^");
+                            Game.current_notes.current_expression.drawExpression(strExpression, false);
+                            //Update Game solution and notes if this is the main(top) expression item
+                            if (Game.current_notes.current_expression.note.solution_index == 1)
+                            {
+                                //Update the userSolution for current cage
+                                Game.current_notes.current_expression.update(n);
+
+                                //Update the playing board
+                                cage = Game.getCage(x, y);
+                                GameEvents.updateGame(cage, x, y, n, false);
+
+                                //Alaways save game after this
+                                if(GameEvents.g_auto_save)
+                                {
+                                    GameEvents.saveGame(CONST.G_SAVE_GAME, false);
+                                }
+                            }
+                            else
+                            {
+                                Game.current_notes.current_expression.update(n);
+                            }
+                            //paint all duplicate terms red
+                            Game.current_notes.setDuplicates();
+                        }
+                    }
+                }
             }
-          }
+            else {
+                //If Notes page is not showing
+                if (!Game.current_notes)
+                {
+                    if(Game.confirm_hint)
+                    {
+                        if(!confirm("Add Hint to Random Location?"))
+                        {
+                            confirmed = false;
+                        }
+                    }
+
+                    if(confirmed)
+                    {
+                        Game.hints = Game.hints + 1;
+
+                        var empties = Game.scanForEmptys(Game.solution);
+                        var index = Utl.getRandomInt(0,empties.length);
+                        var y = empties[index][0];
+                        var x = empties[index][1];
+                        var cage = Game.getCage(x, y);
+
+                        Game.current_selection = $("#overlay_table").find("[data-x='" + x + "'][data-y='" + y + "']")[0];
+                        GameEvents.updateGame(cage, x, y, Game.solution[y][x][0], false);
+                        //Alaways save game after this
+                        if(GameEvents.g_auto_save)
+                        {
+                            GameEvents.saveGame(CONST.G_SAVE_GAME, false);
+                        }
+                        Game.current_selection = null;
+                    }
+                }
+            }
         });
 
         $("#cartoucheToolRestart").click(function (e) {
@@ -904,7 +949,7 @@ var GameEvents = {
                 //Alaways save game after this
                 if(GameEvents.g_auto_save)
                 {
-                  GameEvents.saveGame(CONST.G_SAVE_GAME, false);
+                    GameEvents.saveGame(CONST.G_SAVE_GAME, false);
                 }
             }
         });
@@ -922,13 +967,13 @@ var GameEvents = {
     },
 
     showInline: function (id) {
-      $(id).removeClass("hide");
-      $(id).addClass("showInline");
+        $(id).removeClass("hide");
+        $(id).addClass("showInline");
     },
 
     hideInline: function (id) {
-      $(id).removeClass("showInline");
-      $(id).addClass("hide");
+        $(id).removeClass("showInline");
+        $(id).addClass("hide");
     }
 
 }
