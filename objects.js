@@ -2692,6 +2692,9 @@ var Game = {
                 }
             }
         }
+        else {
+          this.number_set = obj.number_set;
+        }
         return obj;
     },
     //scan the game, make and return operation set
@@ -2746,7 +2749,7 @@ var Game = {
         {
             nSet = this.number_set.set[my_index];
             var pattern = /[*]/;
-            if(nSet.match(pattern))
+            if(nSet && nSet.match(pattern))
             {
                 //Surround with parenthesis for complex operands
                 nSet = "(" + nSet + ")";
